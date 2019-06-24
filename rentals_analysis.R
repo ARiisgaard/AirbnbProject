@@ -1,5 +1,5 @@
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
+setwd
 # load the libraries
 #install.packages ("tmap")
 library(sp)
@@ -74,7 +74,6 @@ rents$rentM2 <- rents$rent /rents$size
 # add column price/m3 into table data
 rents_table$rentM2 <- rents_table$rent /rents_table$size
 
-
 #---- OUTLIER  TREATMENT ------
 
 # filter only needed years
@@ -92,8 +91,144 @@ label_neighborhood <- c("Amager Øst","Amager Vest","Bispebjerg",
                         "Vesterbro")
 
 # outlieres accross the neighbourhood
-p <- ggplot(rents_f, aes(neighbourh, rentM2))
-p
+geom_boxplot(aes(colour = neighbourh),
+                 varwidth = TRUE,
+                 outlier.colour = "black",
+                 outlier.shape = 1) + coord_flip()+
+  scale_x_discrete(labels= label_neighborhood)
+
+#______C L E A N I N G ____D A T A ____
+
+rents_f2<-rents_f[!(rents_f$rentM2<=20),]
+rents_f2<-rents_f[!(rents_f$rentM2>=600),]
+
+#_______Trying the regresion analysis____
+
+Filter_2015<-filter(rents_f,(year == 2015))
+
+
+rents_f$date1<-paste(month.abb[as.numeric(rents_f$month)], rents_f$year, sep="-" )
+rents_f$date2<-paste(1,rents_f$month,rents_f$year,sep="/")
+rents_f$Date <- as.Date(rents_f$date2,format = "%d/%m/%Y")
+rents_f
+ggplot(rents_f, aes(x=Date, y=rentM2, color=neighbourh)) + geom_point(shape=1)
+
+
+# Same, but with different colors and add regression lines
+ggplot(rents_f, aes(x=Date, y=rentM2, color=neighbourh)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+
+
+c<-unique(rents_f$neighbourh, incomparables = FALSE)
+
+Filter<-filter(rents_f,(neighbourh == (c[1])))
+ggplot(Filter,aes(Date, rentM2))+geom_point(aes(colour = neighbourh))+
+      geom_smooth(method='lm', aes(fill=neighbourh))
+
+Filter<-filter(rents_f,(neighbourh == (c[2])))
+ggplot(Filter,aes(Date, rentM2))+geom_point(aes(colour = neighbourh))+
+  geom_smooth(method='lm', aes(fill=neighbourh))
+
+Filter<-filter(rents_f,(neighbourh == (c[3])))
+ggplot(Filter,aes(Date, rentM2))+geom_point(aes(colour = neighbourh))+
+  geom_smooth(method='lm', aes(fill=neighbourh))
+
+Filter<-filter(rents_f,(neighbourh == (c[4])))
+ggplot(Filter,aes(Date, rentM2))+geom_point(aes(colour = neighbourh))+
+  geom_smooth(method='lm', aes(fill=neighbourh))
+    
+#______________________________________________________________
+
+
+blankPlot <- ggplot()+geom_blank(aes(1,1))+
+  theme(
+    plot.background = element_blank(), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank(), 
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+  )
+# Scatter plot of x and y variables and color by groups
+
+scatterPlot <- ggplot(rents_f,aes(Date, rentM2, color=neighbourh)) + 
+  geom_point() + 
+  scale_color_manual(values = c('#999999','#E69F00','green','yellow','blue','pink','red','black','#994489','#991155','#009999','#111111')) + 
+  theme(legend.position=c(0,1), legend.justification=c(0,1))
+scatterPlot
+# Marginal density plot of x (top panel)
+xdensity <- ggplot(rents_f, aes(Date, fill=neighbourh)) + 
+  geom_density(alpha=.5) + 
+  scale_color_manual(values = c('#999999','#E69F00','green','yellow','blue','pink','red','black','#994489','#991155','#009999','#111111')) + 
+  theme(legend.position = "none")
+xdensity
+# Marginal density plot of y (right panel)
+ydensity <- ggplot(rents_f, aes(rentM2, fill=neighbourh)) + 
+  geom_density(alpha=.5) + 
+  scale_color_manual(values = c('#999999','#E69F00','green','yellow','blue','pink','red','black','#994489','#991155','#009999','#111111')) + 
+  theme(legend.position = "none")
+ydensity
+ 
+library("gridExtra")
+grid.arrange(xdensity, blankPlot, scatterPlot, ydensity, 
+             ncol=2, nrow=2, widths=c(4, 1.4), heights=c(1.4, 4))
+
+#__________________________________
+
+neighbourh1<-filter(rents_f,(neighbourh == "Indre By" | neighbourh == "Frederiksberg"))
+
+scatterPlot <- ggplot(neighbourh1,aes(Date, rentM2, color=neighbourh)) + 
+  geom_point() + 
+  scale_color_manual(values = c('#999999','#E69F00')) + 
+  theme(legend.position=c(0,1), legend.justification=c(0,1))
+scatterPlot
+# Marginal density plot of x (top panel)
+xdensity <- ggplot(neighbourh1, aes(Date, color=neighbourh)) + 
+  geom_density(alpha=.5) + 
+  scale_color_manual(values = c('#999999','#E69F00')) + 
+  theme(legend.position = "none")
+xdensity
+# Marginal density plot of y (right panel)
+ydensity <- ggplot(neighbourh1, aes(rentM2, colour=neighbourh)) + 
+  geom_density(alpha=.5) + 
+  scale_color_manual(values = c('#999999','#E69F00')) + 
+  theme(legend.position = "none")
+ydensity
+library("gridExtra")
+grid.arrange(xdensity, blankPlot, scatterPlot, ydensity, 
+             ncol=2, nrow=2, widths=c(4, 1.4), heights=c(1.4, 4))
+
+
+#________________________________________________
+
+model <- lm(date2 ~ rentM2, Filter_2014)
+
+plot(rents_f$Date,rents_f$rentM2,
+     xlim=c(min(as.Date(rents_f$Date)),max(as.Date(rents_f$Date))),
+     ylim=c(0, 1000),
+     main="With Outliers", 
+     xlab="date2", ylab="rentM2", pch="*", col="red", cex=2)
+abline(lm(Date ~ rentM2, data=rents_f), col="blue", lwd=3, lty=300)
+
+
+#levels = c(2014-1, 2014-2,2014-3,2014-4,2014-5,2014-6,2014-7,2014-8,2014-9,2014-10,2014-11,2014-12)
+#levels = c("2014-1", "2014-2","2014-3","2014-4","2014-5","2014-6","2014-7","2014-8","2014-9","2014-10","2014-11","2014-12")
+
+
+#for all years
+ggplot(rents_f,aes(Date, rentM2)) + geom_point(aes(colour = neighbourh))
+  
+
+# outlieres accross the neighbourhood
+p <- ggplot(rents_f, aes(neighbourh, rentM2));p
 p + geom_boxplot(aes(colour = neighbourh),
                  varwidth = TRUE,
                  outlier.colour = "black",
@@ -137,7 +272,7 @@ gg <- p + geom_point(data=rents_f, aes(x = lng, y = lat, col = rooms)) +
        caption = "Source: Akutbolig"); gg
 
 
-.............S T A R T  OF   R O O M - P I E   C H A R T..........
+#.............S T A R T  OF   R O O M - P I E   C H A R T..........
 
 rents_f <- subset(rents, 
                   (year == 2014| year == 2015| year== 2016| year == 2017| year == 2018)
@@ -366,8 +501,6 @@ neighborhoods_table<- neighborhoods_table %>%
 neighborhoods_table$geometry <- NULL
 neighborhoods_table
 
-
-
 library(mapproj)
 p<- ggplot(neighbour_poly.df, aes(long,lat,group=group))+
   geom_polygon(fill="808000",colour="#778899",size=1,
@@ -433,12 +566,50 @@ ggplot(df_all, aes(x=neighbourh, y=rentM2)) + stat_summary(fun.y="mean", geom="b
 
 #avarage price per M3 per each year(second way)
 df_all2<- rbind(df_year2014, df_year2015, df_year2016 ,df_year2017,df_year2018)
-avarage_rent<-ddply(df_all2, .(year), summarize,  Mean=mean(rentM2))
+
 
 ggplot(data = avarage_rent, aes( x = year, y =Mean))+ ylim(0, 300)+
   theme(plot.title = element_text(hjust = 0.5))+
   labs(title="Average property price per square meter",  x ="Year", y = "Price Square meter")+
   geom_bar( stat = 'identity' ,position = 'dodge')
+
+
+#Annual Growth- per M3 per each year(second way)
+
+year_borough <- count_(df_all2, vars = c('year', 'neighbourh', 'rentM2'), sort = TRUE) %>% 
+  arrange(year ,neighbourh, Mean(rentM2))
+
+avarage_rent<-ddply(df_all2, .(year,neighbourh), summarize,  Mean=mean(rentM2))
+
+year_growth <- avarage_rent  %>%
+  ggplot(aes(year,Mean, group = neighbourh)) + geom_line(aes(colour=neighbourh)) +
+  ggtitle("Annual rental Growth in CPH,2014-1018 ")  + labs(x = "Year", y = "rentM2")
+year_growth
+
+
+library(ggpubr)
+
+avg_price <-df_all2 %>%
+  group_by(neighbourh) %>%
+  dplyr::summarize(Mean = mean(rentM2, na.rm=TRUE))
+avg_price
+
+
+popular<-mutate(df_all2,mean_price=(avg_price$Mean)) 
+
+ggscatter(popular, x = "n", y = "mean_price", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Count popularity", ylab = "Mean price")
+
+
+# 
+ggqqplot(popular$n, ylab = "Count popularity")
+# 
+ggqqplot(popular$mean_price, ylab = "Mean price")
+
+
+
 
 ---------------------------------------------
   

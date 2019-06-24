@@ -615,9 +615,26 @@ neighborhoods$total<-n.breach
 # Simple densities and map
 #choropleth(neighborhoods,n.breach/poly.areas(neighborhoods))
 
-
+?????????????????????????????????????????????????????????????+++++++++++
 
 .... T O T A L...R E N T S... P E R....N E I G H B O U R H O O D S......
+
+
+#_____SCHOOL__DISTRICT___
+neighborhoods <- readOGR("Neighbourh_without_F.shp",encoding = "UTF-8")
+neighborhoods_table <- st_read("Neighbourh_without_F.shp")
+neighborhoods_table$skolenavn <- iconv(neighborhoods_table$skolenavn, "latin1", "UTF-8")
+neighborhoods_table$skole <- iconv(neighborhoods_table$skole, "latin1", "UTF-8")
+proj4string(neighborhoods) <- CRS("+init=EPSG:25833")
+
+# simple plot of neighbourhood
+# plot(neighborhoods_table['neighbourh'])
+
+# calculate central points of neighbourh
+centroids <- as.data.frame(centroid(neighborhoods))
+colnames(centroids) <- c("lon", "lat")
+neighborhoods_table$lon<-centroids$lon
+neighborhoods_table$lat<-centroids$lat
 
 #install.packages("leaflet")
 library(leaflet)
@@ -628,22 +645,32 @@ library(leaflet)
 #m %>% addProviderTiles(providers$Stamen.Toner)
 
 # Interactive MAP of total rents per neighbourhood 
-label_neighborhood <- c("Frederiksberg","Brønshoj-Husum","Østerbro",
+
+
+neighborhoods_table$area_sqkm 
+a<- area(neighborhoods)/1000000
+library(sf)
+neighborhoods_table$area <- st_area(neighborhoods_table)
+neighborhoods_table$Norma <- neighborhoods_table$Total/neighborhoods_table$area/
+
+
+
+label_neighborhood<- c("Brønshoj-Husum","Østerbro",
                         "Indre By","Nørrebro","Bispebjerg",
                         "Valby","Vesterbro","Amager Vest",
                         "Amager Øst","Vanløse")
 
-mapviewOptions(basemaps = c("Stamen.Toner", "OpenStreetMap.DE"),
+mapviewOptions(basemaps = c("Stamen.Toner", "OpenStreetMap.DE","Esri.WorldGrayCanvas"),
                vector.palette = colorRampPalette(brewer.pal(9, "OrRd")),
                na.color = "magenta",
                layers.control.pos = "topright")
 
 map<-mapview(basebmap=c("OpenStreetMap"),
-             addStaticLabels= "total",
-             neighborhoods_table, zcol = "total", legend = TRUE,
-             at = seq(700, 10000,100),
+             addStaticLabels= "Norma",
+             neighborhoods_table, zcol = "Norma", legend = TRUE,
              layer.name = c("Number of rent offers"))
 
+map
 map_label = addStaticLabels(map,
                             data = neighborhoods_table,
                             label = label_neighborhood)
@@ -651,7 +678,7 @@ map_label
 
 # Static MAP- Numbers of rental offers
 map_total<-tm_shape(neighborhoods)+
-  tm_fill(col = "total", title = "No. rents", pallete= "seq") +
+  tm_fill(col = "Total", title = "No. rents", pallete= "seq") +
   tm_borders(lwd = 0.3) +
   tm_text("neighbourh", size = 0.7)+
   tm_style("grey") +
@@ -667,7 +694,7 @@ tmap_arrange (map_total)
 
 # Static MAP1- Numbers of rental offers (lenged into continous color scale)
 map_total<-tm_shape(neighborhoods) +
-  tm_fill(col = "total", title = "No. rents", pallete= "seq",style = "cont") +
+  tm_fill(col = "Total", title = "No. rents", pallete= "seq",style = "cont") +
   tm_borders(lwd = 0.3, col="grey") +
   tm_text("neighbourh", size = 0.7)+
   tm_style("cobalt") +
@@ -683,9 +710,9 @@ tmap_arrange (map_total)
 
 # Static MAP2- Numbers of rental offers (lenged into continous color scale)
 map_total<-tm_shape(neighborhoods) +
-  tm_fill(col = "total", title = "No. rents", pallete= "seq",style = "cont") +
+  tm_fill(col = "Total", title = "No. rents", pallete= "seq",style = "cont") +
   tm_borders(lwd = 0.3, col="grey") +
-  tm_text("neighbourh", size = 0.7)+
+  tm_text("Total", size = 0.7)+
   tm_style("classic") +
   tm_layout(
     main.title = "Number of rental offers 2014-2019",
@@ -719,6 +746,7 @@ year2017 <- rents[rents$year == '2017',]
 year2018 <- rents[rents$year == '2018',]
 year2019 <- rents[rents$year == '2019',]
 
+class(rents)
 n.breach<- poly.counts(rents,neighborhoods)
 neighborhoods_table$total<-n.breach
 
@@ -735,7 +763,7 @@ map2014<-mapview(neighborhoods, zcol = c("total2014"),
                  at = seq(100, 1100, 100),
                  layer.name = c("Number of rent offer"),
                  hide = TRUE)
-#map2014
+map2014
 
 total2015<- poly.counts(year2015,neighborhoods)
 neighborhoods_table$total2015<-total2015
